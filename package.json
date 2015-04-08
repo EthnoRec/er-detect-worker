@@ -1,0 +1,28 @@
+{
+  "name": "work-splitter",
+  "version": "1.0.0",
+  "description": "Split face detection work",
+  "main": "index.js",
+  "dependencies": {
+    "moment": "^2.9.0",
+    "pg": "^4.3.0",
+    "pg-hstore": "^2.3.1",
+    "request": "^2.53.0",
+    "sequelize": "^2.0.4",
+
+    "tinder-gather": "git+ssh://la12808@snowy.cs.bris.ac.uk:~/Projects/project/tinder-gather.git#dev"
+  },
+  "devDependencies": {
+    "chai": "^2.1.1",
+    "mocha": "^2.2.0"
+  },
+  "scripts": {
+    "test": "NODE_ENV=test mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "ssh://la12808@snowy.cs.bris.ac.uk:Projects/project/face-detection/work-splitter.git"
+  },
+  "author": "Lee Archer <la12808@my.bristol.ac.uk>",
+  "license": "ISC"
+}
