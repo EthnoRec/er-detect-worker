@@ -1,16 +1,17 @@
 {
-  "name": "work-splitter",
+  "name": "detect-worker",
   "version": "1.0.0",
-  "description": "Split face detection work",
+  "description": "Prepare images for detection",
   "main": "index.js",
   "dependencies": {
+    "bluebird": "^2.9.24",
     "moment": "^2.9.0",
     "pg": "^4.3.0",
     "pg-hstore": "^2.3.1",
-    "request": "^2.53.0",
+    "request": "^2.55.0",
     "sequelize": "^2.0.4",
-
-    "tinder-gather": "git+ssh://la12808@snowy.cs.bris.ac.uk:~/Projects/project/tinder-gather.git#dev"
+    "tinder-gather": "git+ssh://la12808@snowy.cs.bris.ac.uk:~/Projects/project/tinder-gather.git#dev",
+    "yargs": "^3.7.0"
   },
   "devDependencies": {
     "chai": "^2.1.1",
