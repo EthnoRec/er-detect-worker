@@ -5,6 +5,7 @@
   "main": "index.js",
   "dependencies": {
     "bluebird": "^2.9.24",
+    "child-process-promise": "^1.0.2",
     "moment": "^2.9.0",
     "pg": "^4.3.0",
     "pg-hstore": "^2.3.1",
