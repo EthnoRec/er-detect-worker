@@ -29,7 +29,7 @@ var downloadPics = function(id,out){
         }).finally(function(){
             return DetectionJob.find({where:{_id:id}})
                 .then(function(dj){
-                   return dj.getImages(); 
+                   return dj.getUnprocessedImages(); 
                 })
                 .each(function(image){
                     return fs.accessAsync(path.join(out,image._id+"."+image.ext),fs.R_OK)
@@ -41,7 +41,7 @@ var downloadPics = function(id,out){
 };
 
 var detectFaces = function(id,out) {
-    return Image.findAll({where:{detection_job_id:id}}).map(function(image){
+    return DetectionJob.find({_id:id}).getUnprocessedImages().map(function(image){
         return image._id+"."+image.ext;
     }).then(function(list){
         return spawn("./facefinder",[out])
