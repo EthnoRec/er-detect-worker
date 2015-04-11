@@ -41,7 +41,9 @@ var downloadPics = function(id,out){
 };
 
 var detectFaces = function(id,out) {
-    return DetectionJob.find({_id:id}).getUnprocessedImages().map(function(image){
+    return DetectionJob.find({_id:id}).then(function(dj){
+        return dj.getUnprocessedImages()
+    }).map(function(image){
         return image._id+"."+image.ext;
     }).then(function(list){
         return spawn("./facefinder",[out])
@@ -70,6 +72,6 @@ var jobStatus = function(id,status){
 
 
 downloadPics(argv.id,argv.out)
-    .return(jobStatus(argv.id,"started"))
+    .then(jobStatus(argv.id,"started"))
     .return(detectFaces(argv.id,argv.out))
-    .return(jobStatus(argv.id,"finished"));
+    .then(jobStatus(argv.id,"finished"));
