@@ -12,6 +12,7 @@
     "request": "^2.55.0",
     "sequelize": "^2.0.4",
     "tinder-gather": "git+ssh://la12808@snowy.cs.bris.ac.uk:~/Projects/project/tinder-gather.git#dev",
+    "underscore": "^1.8.3",
     "yargs": "^3.7.0"
   },
   "devDependencies": {

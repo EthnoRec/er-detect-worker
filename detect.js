@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+var _ = require("underscore");
+
 var argv = require("yargs")
     .example("$0 --id=24 --out=./gather-images", "")
     .demand("id")
@@ -25,7 +27,7 @@ var downloadPics = function(id,out){
     require("tinder-gather/app/config").gather.image_dir = out;
     return fs.mkdirAsync(out)
         .error(function(e){
-
+            // Directory already exists, proceed as normal
         }).finally(function(){
             return DetectionJob.find({where:{_id:id}})
                 .then(function(dj){
@@ -40,26 +42,37 @@ var downloadPics = function(id,out){
         });
 };
 
+var facefinder = function(list,out) {
+    console.log("[detect-worker] - spawning new process");
+    return spawn("./facefinder",[out])
+        .progress(function(cp){
+            cp.stdout.on("data",function(data){
+                console.log("[facefinder] - "+data.toString().substr(0,data.length-1));
+            });
+            cp.stderr.on("data",function(data){
+                console.log("[facefinder] - (stderr) "+data.toString().substr(0,data.length-1));
+            });
+            cp.stdin.write(list.join("\n")+"\n");
+            cp.stdin.end();
+        })
+    .fail(function(e){
+        throw new Error(e);
+    })
+};
+
 var detectFaces = function(id,out) {
     return DetectionJob.find({_id:id}).then(function(dj){
         return dj.getUnprocessedImages()
     }).map(function(image){
         return image._id+"."+image.ext;
     }).then(function(list){
-        return spawn("./facefinder",[out])
-            .progress(function(cp){
-                cp.stdout.on("data",function(data){
-                    console.log("[facefinder] - "+data.toString().substr(0,data.length-1));
-                });
-                cp.stderr.on("data",function(data){
-                    console.log("[facefinder] - (stderr) "+data.toString().substr(0,data.length-1));
-                });
-                cp.stdin.write(list.join("\n")+"\n");
-                cp.stdin.end();
-            })
-            .fail(function(e){
-                throw new Error(e);
-            })
+        var imgsPerGroup = 10; 
+        var listGroups = _.toArray(_.groupBy(list,function(e,i){return Math.floor(i / imgsPerGroup);}));
+        return Promise.reduce(listGroups,function(total,localList){
+            return facefinder(localList,out).then(function(){
+                return localList.length;
+            });
+        },0);
     });
 };
 
