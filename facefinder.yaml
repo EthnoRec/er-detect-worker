@@ -1,0 +1,7 @@
+database:
+    host:       127.0.0.1
+    dbname:     tinder_development
+    user:       tinder
+    password:   tinder_pw
+
+images: ./gather-images

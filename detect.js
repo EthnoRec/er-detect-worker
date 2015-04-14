@@ -3,14 +3,14 @@
 var _ = require("underscore");
 
 var argv = require("yargs")
-    .example("$0 --id=24 --out=./gather-images", "")
+    .example("$0 --id=24 --config=./facefinder.yaml", "")
     .demand("id")
     .describe("id", "Job ID")
-
-    .nargs("out", 1)
-    .default("out","./gather-images")
-    .describe("out", "Image directory output")
-
+    .option("c",{
+        default: "./facefinder.yaml",
+        describe: "facefinder configuration",
+        alias: "config"
+    })
     .argv;
 
 var DetectionJob = require("tinder-gather/app/models").DetectionJob;
@@ -20,8 +20,8 @@ var Promise = require("bluebird");
 var request = Promise.promisify(require("request"));
 var fs = Promise.promisifyAll(require("fs"));
 var path = require("path");
-var spawn = require("child_process").spawn;
 var spawn = require("child-process-promise").spawn;
+var yaml = require("js-yaml");
 
 var downloadPics = function(id,out){
     require("tinder-gather/app/config").gather.image_dir = out;
@@ -42,9 +42,9 @@ var downloadPics = function(id,out){
         });
 };
 
-var facefinder = function(list,out) {
+var facefinder = function(list,configFile) {
     console.log("[detect-worker] - spawning new process");
-    return spawn("./facefinder",[out])
+    return spawn("./facefinder",[configFile])
         .progress(function(cp){
             cp.stdout.on("data",function(data){
                 console.log("[facefinder] - "+data.toString().substr(0,data.length-1));
@@ -60,7 +60,7 @@ var facefinder = function(list,out) {
     })
 };
 
-var detectFaces = function(id,out) {
+var detectFaces = function(id,configFile) {
     return DetectionJob.find({where:{_id:id}}).then(function(dj){
         return dj.getUnprocessedImages()
     }).map(function(image){
@@ -69,7 +69,7 @@ var detectFaces = function(id,out) {
         var imgsPerGroup = 10; 
         var listGroups = _.toArray(_.groupBy(list,function(e,i){return Math.floor(i / imgsPerGroup);}));
         return Promise.reduce(listGroups,function(total,localList){
-            return facefinder(localList,out).then(function(){
+            return facefinder(localList,configFile).then(function(){
                 return localList.length;
             });
         },0);
@@ -83,8 +83,9 @@ var jobStatus = function(id,status){
     });
 };
 
+var config = yaml.safeLoad(fs.readFileSync(argv.c));
 
-downloadPics(argv.id,argv.out)
+downloadPics(argv.id,config.images)
     .then(jobStatus(argv.id,"started"))
-    .return(detectFaces(argv.id,argv.out))
+    .return(detectFaces(argv.id,argv.c))
     .then(jobStatus(argv.id,"finished"));
