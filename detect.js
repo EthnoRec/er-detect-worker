@@ -61,7 +61,7 @@ var facefinder = function(list,out) {
 };
 
 var detectFaces = function(id,out) {
-    return DetectionJob.find({_id:id}).then(function(dj){
+    return DetectionJob.find({where:{_id:id}}).then(function(dj){
         return dj.getUnprocessedImages()
     }).map(function(image){
         return image._id+"."+image.ext;
