@@ -27,10 +27,27 @@ var fs = Promise.promisifyAll(require("fs"));
 var path = require("path");
 var spawn = require("child-process-promise").spawn;
 var yaml = require("js-yaml");
+var path = require("path");
 
+var downloadPic = function(image){
+    var imgDir = require("tinder-gather/app/config").gather.image_dir;
+    var imgFilename = image._id + "." + image.ext;
+    return fs.statAsync(path.join(imgDir,imgFilename))
+        .catch(function(e){
+            return image.download();
+        })
+};
 var downloadPics = function(images){
     return Promise.all(images.map(function(image){
-        return Promise.resolve(image.download()).return(image._id+"."+image.ext);
+        var imgDir = require("tinder-gather/app/config").gather.image_dir;
+        var imgFilename = image._id + "." + image.ext;
+        return fs.statAsync(path.join(imgDir,imgFilename))
+            .catch(function(e){
+                return image.download();
+            })
+            .finally(function(){
+                return imgFilename;
+            });
     }));
 };
 
@@ -83,15 +100,18 @@ var jobStatus = function(id,status){
 
 var config = yaml.safeLoad(fs.readFileSync(argv.c));
 
+require("tinder-gather/app/config").gather.image_dir = config.images;
 if (argv.plain) {
     //require("tinder-gather/app/config").db.logging = false;
     DetectionJob.find({where:{_id:argv.id}}).then(function(dj){
+        //return Image.findAll({where:{detection_job_id:argv.id}});
         return dj.getUnprocessedImages()
+    }).each(function(image){
+        return downloadPic(image);
     }).each(function(image){
         console.log(image._id + "." + image.ext);
     });
 } else {
-    require("tinder-gather/app/config").gather.image_dir = config.images;
     //downloadPics(argv.id,config.images)
     jobStatus(argv.id,"started")
         .return(detectFaces(argv.id,argv.c))
