@@ -11,6 +11,11 @@ var argv = require("yargs")
         describe: "facefinder configuration",
         alias: "config"
     })
+    .option("plain",{
+        default: false,
+        describe: "Print the whole list of <image_id>.<ext>",
+        type: "boolean"
+    })
     .argv;
 
 var DetectionJob = require("tinder-gather/app/models").DetectionJob;
@@ -23,27 +28,15 @@ var path = require("path");
 var spawn = require("child-process-promise").spawn;
 var yaml = require("js-yaml");
 
-var downloadPics = function(id,out){
-    require("tinder-gather/app/config").gather.image_dir = out;
-    return fs.mkdirAsync(out)
-        .error(function(e){
-            // Directory already exists, proceed as normal
-        }).finally(function(){
-            return DetectionJob.find({where:{_id:id}})
-                .then(function(dj){
-                   return dj.getUnprocessedImages(); 
-                })
-                .each(function(image){
-                    return fs.accessAsync(path.join(out,image._id+"."+image.ext),fs.R_OK)
-                        .catch(function(e){
-                            return Promise.resolve(image.download());
-                        });
-                });
-        });
+var downloadPics = function(images){
+    return Promise.all(images.map(function(image){
+        return Promise.resolve(image.download()).return(image._id+"."+image.ext);
+    }));
 };
 
 var facefinder = function(list,configFile) {
     console.log("[detect-worker] - spawning new process");
+    console.log(list)
     return spawn("./facefinder",[configFile])
         .progress(function(cp){
             cp.stdout.on("data",function(data){
@@ -56,21 +49,25 @@ var facefinder = function(list,configFile) {
             cp.stdin.end();
         })
     .fail(function(e){
+        console.log(e);
         throw new Error(e);
     })
 };
 
+
 var detectFaces = function(id,configFile) {
     return DetectionJob.find({where:{_id:id}}).then(function(dj){
         return dj.getUnprocessedImages()
-    }).map(function(image){
-        return image._id+"."+image.ext;
     }).then(function(list){
         var imgsPerGroup = 10; 
         var listGroups = _.toArray(_.groupBy(list,function(e,i){return Math.floor(i / imgsPerGroup);}));
         return Promise.reduce(listGroups,function(total,localList){
-            return facefinder(localList,configFile).then(function(){
-                return localList.length;
+            return downloadPics(localList)
+            .then(function(localListF){
+                return facefinder(localListF,configFile);
+            })
+            .then(function(){
+                return 1;
             });
         },0);
     });
@@ -83,9 +80,20 @@ var jobStatus = function(id,status){
     });
 };
 
+
 var config = yaml.safeLoad(fs.readFileSync(argv.c));
 
-downloadPics(argv.id,config.images)
-    .then(jobStatus(argv.id,"started"))
-    .return(detectFaces(argv.id,argv.c))
-    .then(jobStatus(argv.id,"finished"));
+if (argv.plain) {
+    //require("tinder-gather/app/config").db.logging = false;
+    DetectionJob.find({where:{_id:argv.id}}).then(function(dj){
+        return dj.getUnprocessedImages()
+    }).each(function(image){
+        console.log(image._id + "." + image.ext);
+    });
+} else {
+    require("tinder-gather/app/config").gather.image_dir = config.images;
+    //downloadPics(argv.id,config.images)
+    jobStatus(argv.id,"started")
+        .return(detectFaces(argv.id,argv.c))
+        .then(jobStatus(argv.id,"finished"));
+}
