@@ -1,8 +1,1 @@
-database:
-    host:       127.0.0.1
-    dbname:     tinder_development
-    user:       tinder
-    password:   tinder_pw
-    port:       55432
-
-images: ./gather-images
+../eharmony-photofeature/facefinder.yaml

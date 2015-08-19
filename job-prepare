@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+mkdir job-$1; tar xf job-$1.tar -C job-$1
+PD=$(pwd)
+cd job-$1
+ln -s ../bulkdetector.sh .
+ln -s ../facefinder .
+ln -s ../facefinder.yaml .
+ln -s ../face_p146.xml .
+cd $PD

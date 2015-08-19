@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+
+filename=list.tmp
+while read -r line
+do
+    echo $line | ./facefinder facefinder.yaml
+done < "$filename"
+
+
+#split -l 1 list.tmp dlist.
+#for listf in dlist.* ; do
+#    cat ${listf} | ./facefinder facefinder.yaml
+#done

@@ -102,9 +102,7 @@ var config = yaml.safeLoad(fs.readFileSync(argv.c));
 
 require("tinder-gather/app/config").gather.image_dir = config.images;
 if (argv.plain) {
-    //require("tinder-gather/app/config").db.logging = false;
     DetectionJob.find({where:{_id:argv.id}}).then(function(dj){
-        //return Image.findAll({where:{detection_job_id:argv.id}});
         return dj.getUnprocessedImages()
     }).each(function(image){
         return downloadPic(image);
